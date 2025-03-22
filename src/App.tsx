@@ -87,6 +87,15 @@ function App() {
                     alt="Uploaded"
                     className="max-h-96 mx-auto rounded-lg"
                   />
+                  <div className="text-center mt-4">
+                    <a
+                      href={imageUrl}
+                      download="processed_image.png"
+                      className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition-colors"
+                    >
+                      Save
+                    </a>
+                  </div>
                 </div>
               )}
             </div>

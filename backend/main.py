@@ -2,7 +2,7 @@ from fastapi import FastAPI, File, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
 from ultralytics import YOLO
 import numpy as np
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 import io
 import base64
 
@@ -38,25 +38,38 @@ async def predict(file: UploadFile = File(...)):
     # Make prediction
     results = model.predict(image_array)
     detections = results[0].boxes.data.cpu().numpy()  # Extract detections
-    print(detections)
-    print()
-    # Format predictions
-    formatted_results = [
-        {
-            "class_id": int(detection[5]),
-            "class_name": model.names[int(detection[5])],
-            "confidence": float(detection[4]),
-            "bbox": detection[:4].tolist()  # [x1, y1, x2, y2]
-        }
-        for detection in detections
-    ]
+    
+    draw = ImageDraw.Draw(image)
+    font = ImageFont.load_default()  # Load default font
+    formatted_results = []
+    for detection in detections:
+        x1, y1, x2, y2 = detection[:4]
+        class_id = int(detection[5])
+        confidence = float(detection[4])  # Convert to Python float
+        class_name = model.names[class_id]
+        
+        # Draw rectangle
+        draw.rectangle([x1, y1, x2, y2], outline="red", width=3)
+        
+        # Add label with class name and confidence
+        label = f"{class_name} {confidence:.2f}%"
+        text_bbox = font.getbbox(label)  # Get bounding box of the text
+        text_width = text_bbox[2] - text_bbox[0]  # Calculate text width
+        text_height = text_bbox[3] - text_bbox[1]  # Calculate text height
+        text_background = [x1, y1 - text_height, x1 + text_width, y1]  # Background for text
+        draw.rectangle(text_background, fill="red")  # Draw background rectangle
+        draw.text((2*x1, 2*(y1 - text_height)), label, fill="white", font=font)  # Draw text
+        
+        # Append to results
+        formatted_results.append({
+            "class_id": class_id,
+            "class_name": class_name,
+            "confidence": float(confidence),  # Convert to Python float
+            "bbox": [float(x1), float(y1), float(x2), float(y2)]  # Convert bbox values to Python float
+        })
     
     # Return predictions and processed image
     return {
         "predictions": formatted_results,
         "processed_image": f"data:image/png;base64,{encode_image_to_base64(image)}"
     }
-
-@app.get("/health")
-async def health_check():
-    return {"status": "healthy"}
