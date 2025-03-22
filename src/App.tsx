@@ -29,10 +29,13 @@ function App() {
 
     try {
       // Send to backend
-      const response = await fetch("http://localhost:8000/predict/", {
-        method: "POST",
-        body: formData,
-      });
+      const response = await fetch(
+        "https://full-stack-ml-image-classification.onrender.com/predict/",
+        {
+          method: "POST",
+          body: formData,
+        }
+      );
 
       if (!response.ok) {
         throw new Error("Failed to process image");
