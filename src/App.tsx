@@ -1,9 +1,11 @@
-import React, { useRef, useState } from 'react';
-import { Upload, Loader2 } from 'lucide-react';
+import React, { useRef, useState } from "react";
+import { Upload, Loader2 } from "lucide-react";
 
 interface Prediction {
+  class_id: number;
   class_name: string;
-  probability: number;
+  confidence: number;
+  bbox: [number, number, number, number];
 }
 
 function App() {
@@ -23,24 +25,24 @@ function App() {
 
     // Create FormData
     const formData = new FormData();
-    formData.append('file', file);
+    formData.append("file", file);
 
     try {
       // Send to backend
-      const response = await fetch('http://localhost:8000/predict/', {
-        method: 'POST',
+      const response = await fetch("http://localhost:8000/predict/", {
+        method: "POST",
         body: formData,
       });
 
       if (!response.ok) {
-        throw new Error('Failed to process image');
+        throw new Error("Failed to process image");
       }
 
       const data = await response.json();
       setImageUrl(data.processed_image);
       setPredictions(data.predictions);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      setError(err instanceof Error ? err.message : "An error occurred");
       setImageUrl(null);
     } finally {
       setIsLoading(false);
@@ -60,7 +62,7 @@ function App() {
           </h1>
 
           <div className="space-y-8">
-            <div 
+            <div
               onClick={handleUploadClick}
               className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-indigo-500 transition-colors"
             >
@@ -74,7 +76,9 @@ function App() {
               {!imageUrl ? (
                 <div className="space-y-4">
                   <Upload className="w-12 h-12 mx-auto text-gray-400" />
-                  <p className="text-gray-500">Click to upload an image or drag and drop</p>
+                  <p className="text-gray-500">
+                    Click to upload an image or drag and drop
+                  </p>
                 </div>
               ) : (
                 <div className="relative">
@@ -102,14 +106,23 @@ function App() {
 
             {predictions.length > 0 && !isLoading && (
               <div className="bg-gray-50 rounded-lg p-6">
-                <h2 className="text-xl font-semibold mb-4 text-gray-800">Predictions</h2>
+                <h2 className="text-xl font-semibold mb-4 text-gray-800">
+                  Predictions
+                </h2>
                 <div className="space-y-3">
                   {predictions.map((prediction, idx) => (
-                    <div key={idx} className="flex justify-between items-center">
-                      <span className="text-gray-700">{prediction.class_name}</span>
-                      <span className="text-gray-500">
-                        {(prediction.probability * 100).toFixed(2)}%
-                      </span>
+                    <div key={idx} className="space-y-1">
+                      <div className="flex justify-between items-center">
+                        <span className="text-gray-700">
+                          {prediction.class_name}
+                        </span>
+                        <span className="text-gray-500">
+                          {(prediction.confidence * 100).toFixed(2)}%
+                        </span>
+                      </div>
+                      {/* <div className="text-gray-500 text-sm">
+                        BBox: [{prediction.bbox.join(", ")}]
+                      </div> */}
                     </div>
                   ))}
                 </div>
